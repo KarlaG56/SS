@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, TouchableOpacity, StyleSheet, Text, Image, Alert, Dimensions } from 'react-native';
-import {  Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import * as MediaLibrary from "expo-media-library";
 import { Camera } from 'expo-camera';
 import Button from '../components/Capture';
@@ -22,7 +22,7 @@ const Camara = () => {
         const requestPermissions = async () => {
             const { status: cameraStatus } = await Camera.requestCameraPermissionsAsync();
             setHasCameraPermission(cameraStatus === 'granted');
-            
+
             const { status: mediaStatus } = await MediaLibrary.requestPermissionsAsync();
             setHasMediaLibraryPermission(mediaStatus === 'granted');
         };
@@ -38,7 +38,7 @@ const Camara = () => {
                     ratio: '1:1'
                 });
                 setImage(uri);
-                
+
             } catch (e) {
                 console.log(e);
             }
@@ -49,7 +49,6 @@ const Camara = () => {
         if (image) {
             try {
                 const uri = await MediaLibrary.createAssetAsync(image);
-                Alert.alert('Picture saved');
                 navigation.navigate('Description', { image: uri });  // Cambia 'Result' a 'Description'
             } catch (e) {
                 console.log(e);
@@ -109,7 +108,7 @@ const Camara = () => {
 
             <View style={styles.bottomBar}>
                 <View style={styles.iconscontainer}>
-                  
+
                 </View>
                 {image ? (
                     <View
@@ -136,18 +135,21 @@ const Camara = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#D9D9D9',
+        backgroundColor: 'black',
+        
     },
     topBar: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
         position: 'absolute',
         top: 0,
         left: 0,
         right: 0,
-        padding: 16,
+        height: '17%',
+        width: '100%',
         zIndex: 1,
+        justifyContent: 'center',
+
     },
+
     bottomBar: {
         flexDirection: 'row',
         justifyContent: 'center',
@@ -156,7 +158,8 @@ const styles = StyleSheet.create({
         bottom: 0,
         left: 0,
         right: 0,
-        padding: 36,
+        padding: 68,
+        zIndex: 1,
     },
     iconButton: {
         padding: 10,
@@ -170,10 +173,11 @@ const styles = StyleSheet.create({
         marginRight: 10,
     },
     camarast: {
-        flex: 1,
-        borderRadius: 20,
         width: width * 1,
-        height: height * 0.35,
+        height: height * 0.61,
+        borderRadius: 15,
+        overflow: 'hidden',
+        marginTop:147
     },
 });
 

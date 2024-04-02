@@ -1,8 +1,73 @@
-import React from "react";
-import { Text, View, TouchableOpacity, StyleSheet, ScrollView, Image } from 'react-native';
+import React, { useState, useEffect } from "react";
+import { Text, View, TouchableOpacity, StyleSheet, ScrollView, Image, Button } from 'react-native';
+import * as tf from '@tensorflow/tfjs';
+import '@tensorflow/tfjs-react-native';
 
 const Description = ({ route }) => {
     const { image } = route.params;
+    const [predictions, setPredictions] = useState([]);
+    let model;
+
+    useEffect(() => {
+        const loadModel = async () => {
+            try {
+                const modelJson = require('../assets/Modelo/model.json');
+                const modelWeights = require('../assets/Modelo/combined_model.bin');
+
+                model = await tf.loadLayersModel(tf.io.bundleResource(modelJson, modelWeights));
+
+                console.log('Modelo cargado');
+            } catch (error) {
+                console.error('Error al cargar el modelo', error);
+            }
+        }
+
+        loadModel();
+    }, []);
+
+    const predict = async (imagePath) => {
+        const imageTensor = await loadImage(imagePath);
+        const tensor = tf.browser.fromPixels(imageTensor)
+            .resizeBilinear([224, 224])
+            .expandDims()
+            .toFloat();
+
+        try {
+            const preds = await model.predict(tensor).data();
+            setPredictions(preds);
+            console.log('Predicciones:', preds);
+        } catch (error) {
+            console.error('Error en la predicción', error);
+        }
+    }
+
+    const loadImage = async (imagePath) => {
+        try {
+            const response = await fetch(imagePath);
+            const blob = await response.blob();
+
+            return tf.browser.fromPixels(await blobToImage(blob));
+        } catch (error) {
+            console.error('Error al cargar la imagen', error);
+        }
+    }
+
+    const blobToImage = async (blob) => {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const base64data = reader.result;
+                const img = new Image();
+                img.src = base64data;
+                img.onload = () => resolve(img);
+            };
+            reader.readAsDataURL(blob);
+        });
+    }
+
+    const handlePredict = async () => {
+        await predict(image.uri);
+    }
 
     return (
         <View style={styles.container}>
@@ -17,11 +82,13 @@ const Description = ({ route }) => {
                 <View style={styles.signContainer}>
                     <Image source={{ uri: image.uri }} style={styles.image} />
                     <Text style={styles.signTitle}>Sign #1</Text>
-                    <Text style={styles.descriptionText}>
-                        Escribe aquí tu texto Escribe aquí tu texto Escribe aquí tu texto 
-                        Escribe aquí tu texto Escribe aquí tu texto Escribe aquí tu texto 
-                        Escribe aquí tu texto Escribe aquí tu texto Escribe aquí tu texto.
-                    </Text>
+                    <Button title="Predecir" onPress={handlePredict} />
+                    {predictions.length > 0 && (
+                        <View>
+                            <Text>Predicciones:</Text>
+                            <Text>{JSON.stringify(predictions)}</Text>
+                        </View>
+                    )}
                 </View>
             </ScrollView>
         </View>
@@ -62,7 +129,7 @@ const styles = StyleSheet.create({
     signTitle: {
         fontSize: 19,
         fontWeight: 'bold',
-        marginBottom: 30,
+        marginBottom: 10,
     },
     descriptionText: {
         fontSize: 16,
