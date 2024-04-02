@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, TouchableOpacity, StyleSheet, Text, Image, Alert, Dimensions } from 'react-native';
-import { MaterialIcons, Ionicons } from '@expo/vector-icons';
+import {  Ionicons } from '@expo/vector-icons';
 import * as MediaLibrary from "expo-media-library";
 import { Camera } from 'expo-camera';
 import Button from '../components/Capture';
@@ -33,9 +33,10 @@ const Camara = () => {
             try {
                 const { uri } = await cameraRef.current.takePictureAsync({
                     quality: 1,
-                    ratio: '1:1' // Captura una imagen cuadrada
+                    ratio: '1:1'
                 });
                 setImage(uri);
+                
             } catch (e) {
                 console.log(e);
             }

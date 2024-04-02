@@ -1,6 +1,7 @@
 import React from "react";
 import { Text, View, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 
+
 const Description = () => {
     return (
         <View style={styles.container}>
