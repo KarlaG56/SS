@@ -5,10 +5,12 @@ import * as MediaLibrary from "expo-media-library";
 import { Camera } from 'expo-camera';
 import Button from '../components/Capture';
 import Option from '../components/Option';
+import { useNavigation } from '@react-navigation/native';
 
 const { width, height } = Dimensions.get('window');
 
 const Camara = () => {
+    const navigation = useNavigation();
     const [hasCameraPermission, setHasCameraPermission] = useState(null);
     const [hasMediaLibraryPermission, setHasMediaLibraryPermission] = useState(null);
     const [image, setImage] = useState(null);
@@ -46,9 +48,9 @@ const Camara = () => {
     const saveImage = async () => {
         if (image) {
             try {
-                await MediaLibrary.createAssetAsync(image);
+                const uri = await MediaLibrary.createAssetAsync(image);
                 Alert.alert('Picture saved');
-                setImage(null);
+                navigation.navigate('Description', { image: uri });  // Cambia 'Result' a 'Description'
             } catch (e) {
                 console.log(e);
             }
