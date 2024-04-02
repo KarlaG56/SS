@@ -17,6 +17,7 @@
     "@react-navigation/stack": "^6.3.29",
     "@tensorflow/tfjs": "^4.17.0",
     "@tensorflow/tfjs-react-native": "^1.0.0",
+    "canvas": "^2.11.2",
     "expo": "~50.0.8",
     "expo-camera": "^13.9.0",
     "expo-media-library": "^15.9.1",

@@ -1,73 +1,77 @@
 import React, { useState, useEffect } from "react";
-import { Text, View, TouchableOpacity, StyleSheet, ScrollView, Image, Button } from 'react-native';
+import { Text, View, TouchableOpacity, StyleSheet, ScrollView, Image } from 'react-native';
 import * as tf from '@tensorflow/tfjs';
 import '@tensorflow/tfjs-react-native';
+import { decodeJpeg, bundleResourceIO } from '@tensorflow/tfjs-react-native';
 
 const Description = ({ route }) => {
     const { image } = route.params;
     const [predictions, setPredictions] = useState([]);
-    let model;
+    const [model, setModel] = useState(null);
+    const classes = ['Apagar la luz', 'Area de trabajo', 'Escalera', 'Gel antibacterial', 'Lavado de manos',
+    'Personal no autorizado', 'Riesgo electrico','Ruta de evacuacion hacia la izquierda', 'Ruta de evacuacion hacia la derecha', 
+    'Sana distancia','Uso de cubrebocas'];
+
 
     useEffect(() => {
-        const loadModel = async () => {
-            try {
-                const modelJson = require('../assets/Modelo/model.json');
-                const modelWeights = require('../assets/Modelo/combined_model.bin');
-
-                model = await tf.loadLayersModel(tf.io.bundleResource(modelJson, modelWeights));
-
-                console.log('Modelo cargado');
-            } catch (error) {
-                console.error('Error al cargar el modelo', error);
-            }
-        }
-
-        loadModel();
+        tf.ready().then(() => {
+            loadModel();
+        });
     }, []);
 
-    const predict = async (imagePath) => {
-        const imageTensor = await loadImage(imagePath);
-        const tensor = tf.browser.fromPixels(imageTensor)
-            .resizeBilinear([224, 224])
-            .expandDims()
-            .toFloat();
-
-        try {
-            const preds = await model.predict(tensor).data();
-            setPredictions(preds);
-            console.log('Predicciones:', preds);
-        } catch (error) {
-            console.error('Error en la predicción', error);
+    useEffect(() => {
+        if (model && image) {
+            predict(image.uri);
         }
-    }
+    }, [model, image]);
 
-    const loadImage = async (imagePath) => {
+    const loadModel = async () => {
         try {
-            const response = await fetch(imagePath);
+            const modelJson = require('../assets/Modelo/model.json');
+            const modelWeights = [
+                require('../assets/Modelo/group1-shard1of8.bin'),
+                require('../assets/Modelo/group1-shard2of8.bin'),
+                require('../assets/Modelo/group1-shard3of8.bin'),
+                require('../assets/Modelo/group1-shard4of8.bin'),
+                require('../assets/Modelo/group1-shard5of8.bin'),
+                require('../assets/Modelo/group1-shard6of8.bin'),
+                require('../assets/Modelo/group1-shard7of8.bin'),
+                require('../assets/Modelo/group1-shard8of8.bin'),
+            ];
+            const loadedModel = await tf.loadLayersModel(bundleResourceIO(modelJson, modelWeights));
+            setModel(loadedModel);
+            console.log('Modelo cargado');
+        } catch (error) {
+            console.error('Error al cargar el modelo:', error);
+        }
+    };
+
+    const predict = async (imageUri) => {
+        try {
+            const response = await fetch(imageUri);
             const blob = await response.blob();
+            const arrayBuffer = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsArrayBuffer(blob);
+            });
 
-            return tf.browser.fromPixels(await blobToImage(blob));
+            const imageData = new Uint8Array(arrayBuffer);
+            const imageTensor = decodeJpeg(imageData);
+            const resizedImageTensor = imageTensor.resizeBilinear([64, 64]).mean(2).expandDims(0).expandDims(-1).toFloat();
+            const prediction = await model.predict(resizedImageTensor);
+            const predictionData = prediction.dataSync();
+            const predictionsArray = Array.from(predictionData);
+            const predictedIndex = predictionsArray.indexOf(Math.max(...predictionsArray));
+            setPredictions(classes[predictedIndex]);
+            console.log('Predicciones:', predictionData);
         } catch (error) {
-            console.error('Error al cargar la imagen', error);
+            console.error('Error al hacer la predicción:', error);
         }
-    }
+    };
 
-    const blobToImage = async (blob) => {
-        return new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                const base64data = reader.result;
-                const img = new Image();
-                img.src = base64data;
-                img.onload = () => resolve(img);
-            };
-            reader.readAsDataURL(blob);
-        });
-    }
 
-    const handlePredict = async () => {
-        await predict(image.uri);
-    }
 
     return (
         <View style={styles.container}>
@@ -81,8 +85,7 @@ const Description = ({ route }) => {
             <ScrollView style={styles.content}>
                 <View style={styles.signContainer}>
                     <Image source={{ uri: image.uri }} style={styles.image} />
-                    <Text style={styles.signTitle}>Sign #1</Text>
-                    <Button title="Predecir" onPress={handlePredict} />
+                    <Text style={styles.signTitle}>{JSON.stringify(predictions)}</Text>
                     {predictions.length > 0 && (
                         <View>
                             <Text>Predicciones:</Text>
